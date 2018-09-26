@@ -1,0 +1,75 @@
+# Usage:
+#
+# ansible-playbook -i /etc/ansible/terraform.py consul_cluster.yml
+
+- hosts: 'localhost'
+  connection: 'local'
+  gather_facts: no
+  tasks:
+  - block:
+    - include_role: {name: 'register_inventory_hosts'}
+    rescue:
+    - debug:
+        msg: "Failed to register inventory hosts. Did you check the ssh connection to your hosts?"
+
+- hosts: 'localhost'
+  connection: 'local'
+  gather_facts: no
+  tasks:
+  - block:
+    - include_role: {name: 'download_consul'}
+    rescue:
+    - debug:
+        msg: "Failed to download consul to {{ consul_download_dir }}"
+
+- hosts: 'localhost'
+  connection: 'local'
+  gather_facts: no
+  tasks:
+  - block:
+    - include_role: {name: 'download_consul_ui'}
+    rescue:
+    - debug:
+        msg: "Failed to download consul ui to {{ consul_download_dir }}"
+
+- hosts: "{{ target_env }}"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'deploy_consul'}
+    rescue:
+    - debug:
+        msg: "Failed to deploy consul server"
+
+- hosts: "{{ target_env }}:&bootstrap"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'upgrade_node', role: 'bootstrap', cluster_members: [], when: init_cluster == 'true'}
+    rescue:
+    - debug:
+        msg: "Failed to bootstrap consul cluster"
+
+- hosts: "{{ target_env }}:&server"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'upgrade_node', role: 'server', cluster_members: []}
+    rescue:
+    - debug:
+        msg: "Failed to upgrade consul cluster"
+
+- hosts: "{{ target_env }}:&client"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'deploy_ui'}
+    - include_role: {name: 'upgrade_node', role: 'client'}
+    - include_role: {name: 'upgrade_ui'}
+    rescue:
+    - debug:
+        msg: "Failed to upgrade consul client + ui"
