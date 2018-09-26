@@ -1,0 +1,38 @@
+# Usage:
+#
+# ansible-playbook -i /etc/ansible/terraform.py consul_cluster.yml
+
+- hosts: 'localhost'
+  connection: 'local'
+  tasks:
+  - name: make sure the known hosts file exists
+    file: path='~/.ssh/known_hosts' state="touch"
+
+  - name: remove from known hosts
+    shell: "ssh-keygen -R {{ item }}"
+    with_items: "{{ groups[ vars['target_env'] ] }}"
+
+  - name: add to know hosts
+    shell: "ssh-keyscan -H -T 10 {{ item }} >> ~/.ssh/known_hosts"
+    with_items: "{{ groups[ vars['target_env'] ]}}"
+
+#- hosts: "{{ target_env }}:consul:consul_instances"
+#  remote_user: "root"
+#  gather_facts: no
+#  become: 'yes'
+#  pre_tasks:
+#    - name: 'install python2'
+#      raw: sudo apt-get -y install python-simplejson
+
+- hosts: "{{ target_env }}:&consul:&consul_instances"
+  remote_user: "root"
+  become: 'yes'
+  roles:
+  - {role: 'brianshumate.consul', consul_version: '1.2.3', consul_datacenter: 'domocare-digitalocean', consul_dnsmasq_enable: 'true', consul_autopilot_enable: 'true', consul_autopilot_cleanup_dead_servers: 'true', consul_install_dependencies: 'true'}
+
+#- hosts: "{{ target_env }}:consul:client"
+#  remote_user: "root"
+#  become: 'yes'
+#  roles:
+#  - {role: 'mattfinlayson.ansible-consul', consul_version: '1.2.3', consul_use_systemd: 'true', consul_is_ui: 'true', consul_install_dnsmasq: 'true', consul_install_consulate: 'false', consul_autopilot_cleanup_dead_servers: 'true'}
+
