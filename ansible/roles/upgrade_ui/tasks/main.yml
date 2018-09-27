@@ -1,1 +1,25 @@
 ---
+
+- name: Install nginx
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "nginx"
+
+- name: 'extrapolate nginx config'
+  template: src='nginx.conf.j2' dest="/etc/nginx/nginx.conf"
+
+- name: "deactivate nginx default site"
+  file: state='absent' path="/etc/nginx/sites-enabled/default"
+
+- name: 'extrapolate nginx config'
+  template: src='sites/consul-ui.conf.j2' dest="/etc/nginx/sites-available/consul-ui.conf"
+
+- name: 'link sites-available sites-enabled'
+  file: state='link' src="/etc/nginx/sites-available/consul-ui.conf" dest="/etc/nginx/sites-enabled/consul-ui.conf"
+
+- name: 'reload nginx'
+  service: name='nginx' enabled='yes' state='reloaded'
+
+- name: 'wait for port 80 to come up'
+  wait_for: port="80" delay='1' timeout='5'

@@ -4,13 +4,12 @@
 
 - hosts: 'localhost'
   connection: 'local'
-  gather_facts: no
   tasks:
   - block:
     - include_role: {name: 'register_inventory_hosts'}
     rescue:
     - debug:
-        msg: "Failed to register inventory hosts. Did you check the ssh connection to your hosts?"
+        msg: "Failed to register inventory hosts"
 
 - hosts: 'localhost'
   connection: 'local'
@@ -22,17 +21,7 @@
     - debug:
         msg: "Failed to download consul to {{ consul_download_dir }}"
 
-- hosts: 'localhost'
-  connection: 'local'
-  gather_facts: no
-  tasks:
-  - block:
-    - include_role: {name: 'download_consul_ui'}
-    rescue:
-    - debug:
-        msg: "Failed to download consul ui to {{ consul_download_dir }}"
-
-- hosts: "{{ target_env }}"
+- hosts: "!localhost"
   remote_user: "root"
   become: 'yes'
   tasks:
@@ -40,35 +29,27 @@
     - include_role: {name: 'deploy_consul'}
     rescue:
     - debug:
-        msg: "Failed to deploy consul server"
+        msg: "Failed to deploy consul to all nodes (client + servers)"
 
-- hosts: "{{ target_env }}:&bootstrap"
+- hosts: "server"
   remote_user: "root"
   become: 'yes'
   tasks:
   - block:
-    - include_role: {name: 'upgrade_node', role: 'bootstrap', cluster_members: [], when: init_cluster == 'true'}
+    - include_role: {name: 'upgrade_node'}
+      vars: {node_role: 'server'}
     rescue:
     - debug:
-        msg: "Failed to bootstrap consul cluster"
+        msg: "Failed to upgrade consul cluster nodes"
 
-- hosts: "{{ target_env }}:&server"
+- hosts: "client"
   remote_user: "root"
   become: 'yes'
   tasks:
   - block:
-    - include_role: {name: 'upgrade_node', role: 'server', cluster_members: []}
-    rescue:
-    - debug:
-        msg: "Failed to upgrade consul cluster"
-
-- hosts: "{{ target_env }}:&client"
-  remote_user: "root"
-  become: 'yes'
-  tasks:
-  - block:
+    - include_role: {name: 'upgrade_node'}
+      vars: {node_role: 'client'}
     - include_role: {name: 'deploy_ui'}
-    - include_role: {name: 'upgrade_node', role: 'client'}
     - include_role: {name: 'upgrade_ui'}
     rescue:
     - debug:

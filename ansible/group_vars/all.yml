@@ -1,0 +1,52 @@
+consul_version: '1.2.3'
+
+consul_os_packages: ['unzip']
+consul_checksum_file_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version}}_SHA256SUMS"
+consul_architecture_map:
+  # this first entry seems redundant
+  # (but it's required for reasons)
+  amd64: 'amd64'
+  x86_64: 'amd64'
+  armv6l: 'arm'
+  armv7l: 'arm'
+  aarch64: 'arm64'
+  32-bit: '386'
+  64-bit: 'amd64'
+consul_architecture: "{{ consul_architecture_map[ansible_architecture] }}"
+consul_os: "\
+  {% if ansible_os_family == 'Windows' %}\
+    {{ 'windows' }}\
+  {% else %}\
+    {{ ansible_system | lower }}\
+  {% endif %}"
+consul_pkg: "consul_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
+consul_zip_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
+consul_download_dir: '/tmp/consul/downloads'
+
+consul_user: 'consul'
+consul_home: '/home/consul'
+consul_group: 'consul'
+consul_data_dir: '/var/consul'
+consul_log_dir: '/var/log/consul'
+consul_pid_file: '/var/run/consul/consul.pid'
+consul_config_dir: '/etc/consul.d'
+consul_datacenter: 'exoscale'
+consul_encryption_key: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  63383532623231333433626264636632623131366334643739663666613533646334356538663239
+  3234616165366337323631376539303837313861353239390a393866613561316164313265393432
+  37636130383063353763623530316134633231393665363162636463666366383837336362343230
+  3761353035316633640a656535366566633566373233323135393439366237343233653661623363
+  36363163313866636163663865663638363661373639643533313435613466636134
+
+### Ports
+consul_ports:
+  dns: "{{ consul_ports_dns | default('8600', true) }}"
+  http: "{{ consul_ports_http | default('8500', true) }}"
+  https: "{{ consul_ports_https | default('-1', true) }}"
+  rpc: "{{ consul_ports_rpc | default('8400', true) }}"
+  serf_lan: "{{ consul_ports_serf_lan | default('8301', true) }}"
+  serf_wan: "{{ consul_ports_serf_wan | default('8302', true) }}"
+  server: "{{ consul_ports_server | default('8300', true) }}"
+
+  service_startup_timeout: 300
