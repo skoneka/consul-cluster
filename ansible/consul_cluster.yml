@@ -1,6 +1,5 @@
-# Usage:
+# Usage: export ANSIBLE_TF_DIR=../terraform && ansible-playbook --vault-id ~/.ansible_vault_pass.txt -i /etc/ansible/terraform.py consul_cluster.yml -e 'target_env=staging'
 #
-# ansible-playbook -i /etc/ansible/terraform.py consul_cluster.yml
 
 - hosts: 'localhost'
   connection: 'local'
@@ -31,7 +30,7 @@
     - debug:
         msg: "Failed to deploy consul to all nodes (client + servers)"
 
-- hosts: "server"
+- hosts: "{{target_env}}:&server"
   remote_user: "root"
   become: 'yes'
   tasks:
@@ -41,16 +40,16 @@
     rescue:
     - debug:
         msg: "Failed to upgrade consul cluster nodes"
-
-- hosts: "client"
-  remote_user: "root"
-  become: 'yes'
-  tasks:
-  - block:
-    - include_role: {name: 'upgrade_node'}
-      vars: {node_role: 'client'}
-    - include_role: {name: 'deploy_ui'}
-    - include_role: {name: 'upgrade_ui'}
-    rescue:
-    - debug:
-        msg: "Failed to upgrade consul client + ui"
+#
+#- hosts: "{{target_env}}:&client"
+#  remote_user: "root"
+#  become: 'yes'
+#  tasks:
+#  - block:
+#    - include_role: {name: 'upgrade_node'}
+#      vars: {node_role: 'client'}
+#    - include_role: {name: 'deploy_ui'}
+#    - include_role: {name: 'upgrade_ui'}
+#    rescue:
+#    - debug:
+#        msg: "Failed to upgrade consul client + ui"

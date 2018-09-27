@@ -1,13 +1,12 @@
 ---
 
-- name: 'create consul data dir {{ consul_data_dir }}'
+- name: 'create consul important dirs'
   file: state='directory' path="{{ consul_data_dir }}"
-
-- name: 'create consul log dir {{ consul_log_dir }}'
-  file: state='directory' path="{{ consul_log_dir }}"
-
-- name: 'create consul config dir {{ consul_config_dir }}'
-  file: state='directory' path="{{ consul_config_dir }}"
+  with_items:
+  - "{{ consul_data_dir }}"
+  - "{{ consul_pid_dir }}"
+  - "{{ consul_config_dir }}"
+  - "{{ consul_log_dir }}/{{node_role}}"
 
 - name: "stop consul service"
   service: name='consul' state='stopped'

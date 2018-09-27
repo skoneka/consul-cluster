@@ -1,7 +1,8 @@
+product: 'consul'
 consul_version: '1.2.3'
 
 consul_os_packages: ['unzip']
-consul_checksum_file_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version}}_SHA256SUMS"
+consul_checksum_file_url: "https://releases.hashicorp.com/{{ product }}/{{ consul_version }}/{{ product }}_{{ consul_version}}_SHA256SUMS"
 consul_architecture_map:
   # this first entry seems redundant
   # (but it's required for reasons)
@@ -19,17 +20,18 @@ consul_os: "\
   {% else %}\
     {{ ansible_system | lower }}\
   {% endif %}"
-consul_pkg: "consul_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
-consul_zip_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
-consul_download_dir: '/tmp/consul/downloads'
+consul_pkg: "{{ product }}_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
+consul_zip_url: "https://releases.hashicorp.com/{{ product }}/{{ consul_version }}/{{ product }}_{{ consul_version }}_{{ consul_os }}_{{ consul_architecture }}.zip"
+consul_download_dir: '/tmp/{{ product }}/downloads'
 
-consul_user: 'consul'
-consul_home: '/home/consul'
-consul_group: 'consul'
-consul_data_dir: '/var/consul'
-consul_log_dir: '/var/log/consul'
-consul_pid_file: '/var/run/consul/consul.pid'
-consul_config_dir: '/etc/consul.d'
+consul_user: '{{ product }}'
+consul_home: '/var/lib/{{ product }}'
+consul_group: '{{ product }}'
+consul_data_dir: '/var/{{ product }}'
+consul_log_dir: '/var/log/{{ product }}'
+consul_pid_dir: '/run/{{ product }}'
+consul_pid_file: '{{ consul_pid_dir }}/{{ product }}.pid'
+consul_config_dir: '/etc/{{ product }}.d'
 consul_datacenter: 'exoscale'
 consul_encryption_key: !vault |
   $ANSIBLE_VAULT;1.1;AES256
@@ -49,4 +51,4 @@ consul_ports:
   serf_wan: "{{ consul_ports_serf_wan | default('8302', true) }}"
   server: "{{ consul_ports_server | default('8300', true) }}"
 
-  service_startup_timeout: 300
+service_startup_timeout: 30
