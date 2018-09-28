@@ -51,4 +51,4 @@ consul_ports:
   serf_wan: "{{ consul_ports_serf_wan | default('8302', true) }}"
   server: "{{ consul_ports_server | default('8300', true) }}"
 
-service_startup_timeout: 30
+service_startup_timeout: 60
