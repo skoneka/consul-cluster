@@ -13,7 +13,7 @@
   file: state='absent' path="/etc/nginx/sites-enabled/default"
 
 - name: 'extrapolate nginx config'
-  template: src='sites/consul-ui.conf.j2' dest="/etc/nginx/sites-available/consul-ui.conf"
+  template: src='consul-ui.conf.j2' dest="/etc/nginx/sites-available/consul-ui.conf"
 
 - name: 'link sites-available sites-enabled'
   file: state='link' src="/etc/nginx/sites-available/consul-ui.conf" dest="/etc/nginx/sites-enabled/consul-ui.conf"

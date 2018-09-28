@@ -1,12 +1,12 @@
 ---
 
 - name: 'create consul important dirs'
-  file: state='directory' path="{{ consul_data_dir }}"
+  file: state='directory' path="{{ item }}"
   with_items:
   - "{{ consul_data_dir }}"
   - "{{ consul_pid_dir }}"
-  - "{{ consul_config_dir }}"
-  - "{{ consul_log_dir }}/{{node_role}}"
+  - "{{ consul_config_dir }}/{{node_role}}"
+  - "{{ consul_log_dir }}"
 
 - name: "stop consul service"
   service: name='consul' state='stopped'
@@ -34,7 +34,7 @@
 
 # wait for ports to be available
 - name: "wait for port consul_ports.server to be available"
-  wait_for: port="{{ consul_ports.server }}" delay='1' timeout="{{ service_startup_timeout }}"
+  wait_for: host="{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}" port="{{ consul_ports.server }}" delay='1' timeout="{{ service_startup_timeout }}"
   when: node_role == 'server'
 
 - name: "wait for port consul_ports.http to be available"
