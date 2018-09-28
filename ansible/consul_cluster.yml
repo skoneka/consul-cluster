@@ -7,7 +7,7 @@
   - block:
     - include_role: {name: 'register_inventory_hosts'}
     rescue:
-    - debug:
+    - fail:
         msg: "Failed to register inventory hosts"
 
 - hosts: 'localhost'
@@ -17,7 +17,7 @@
   - block:
     - include_role: {name: 'download_consul'}
     rescue:
-    - debug:
+    - fail:
         msg: "Failed to download consul to {{ consul_download_dir }}"
 
 - hosts: "!localhost"
@@ -27,7 +27,7 @@
   - block:
     - include_role: {name: 'deploy_consul'}
     rescue:
-    - debug:
+    - fail:
         msg: "Failed to deploy consul to all nodes (client + servers)"
 
 - hosts: "{{target_env}}:&server"
@@ -38,18 +38,17 @@
     - include_role: {name: 'upgrade_node'}
       vars: {node_role: 'server'}
     rescue:
-    - debug:
+    - fail:
         msg: "Failed to upgrade consul cluster nodes"
-#
-#- hosts: "{{target_env}}:&client"
-#  remote_user: "root"
-#  become: 'yes'
-#  tasks:
-#  - block:
-#    - include_role: {name: 'upgrade_node'}
-#      vars: {node_role: 'client'}
-#    - include_role: {name: 'deploy_ui'}
-#    - include_role: {name: 'upgrade_ui'}
-#    rescue:
-#    - debug:
-#        msg: "Failed to upgrade consul client + ui"
+
+- hosts: "{{target_env}}:&client"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'upgrade_node'}
+      vars: {node_role: 'client'}
+    - include_role: {name: 'upgrade_ui'}
+    rescue:
+    - fail:
+        msg: "Failed to upgrade consul client + ui"
