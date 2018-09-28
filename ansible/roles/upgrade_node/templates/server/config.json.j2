@@ -5,7 +5,7 @@
   "data_dir": "{{ consul_data_dir }}",
   "encrypt": "{{ consul_encryption_key }}",
   "bootstrap_expect": {{ groups['server'] | count | to_json }},
-  "start_join": {{ groups['server'] | intersect( groups[ vars['target_env'] ]) | difference( [hostvars['ansible_host']] ) | to_json }},
+  "retry_join": {{ groups['server'] | intersect( groups[ vars['target_env'] ]) | difference( [inventory_hostname] ) | to_json }},
   "log_level": "INFO",
   "enable_syslog": true
 }
