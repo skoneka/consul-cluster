@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "{{ servicename }}",
+    "port": {{ serviceport }},
+    "tags": ["{{ target_env }}", "{{ servicename }}"],
+    "check": {
+      "script": "curl localhost:{{ serviceport }}/actuator/health > /dev/null 2>&1",
+      "interval": "10s"
+    }
+  }
+}

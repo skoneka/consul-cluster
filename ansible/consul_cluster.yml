@@ -1,6 +1,7 @@
 # Usage: export ANSIBLE_TF_DIR=../terraform && ansible-playbook --vault-id ~/.ansible_vault_pass.txt -i /etc/ansible/terraform.py consul_cluster.yml -e 'target_env=staging'
 #
 
+# Locally register inventory hosts
 - hosts: 'localhost'
   connection: 'local'
   tasks:
@@ -10,6 +11,7 @@
     - fail:
         msg: "Failed to register inventory hosts"
 
+# Locally download consul
 - hosts: 'localhost'
   connection: 'local'
   gather_facts: no
@@ -20,7 +22,8 @@
     - fail:
         msg: "Failed to download consul to {{ consul_download_dir }}"
 
-- hosts: "!localhost"
+# Deploy consul on all hosts (clients and servers)
+- hosts: "{{target_env}}:&consul"
   remote_user: "root"
   become: 'yes'
   tasks:
@@ -30,6 +33,7 @@
     - fail:
         msg: "Failed to deploy consul to all nodes (client + servers)"
 
+# Upgrade consul on all servers
 - hosts: "{{target_env}}:&server"
   remote_user: "root"
   become: 'yes'
@@ -41,6 +45,22 @@
     - fail:
         msg: "Failed to upgrade consul cluster nodes"
 
+# Upgrade consuldemo service
+- hosts: "{{target_env}}:&service"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
+    - include_role: {name: 'build_service'}
+    - include_role: {name: 'deploy_service'}
+    - include_role: {name: 'upgrade_service'}
+      vars: {register_service: true}
+    rescue:
+    - fail:
+        msg: "Failed to upgrade consuldemo service"
+
+# Upgrade consul on all clients
+# Upgrade consul ui
 - hosts: "{{target_env}}:&client"
   remote_user: "root"
   become: 'yes'
@@ -48,6 +68,7 @@
   - block:
     - include_role: {name: 'upgrade_node'}
       vars: {node_role: 'client'}
+    - include_role: {name: 'oefenweb.dnsmasq'}
     - include_role: {name: 'upgrade_ui'}
     rescue:
     - fail:

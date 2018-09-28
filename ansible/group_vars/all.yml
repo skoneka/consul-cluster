@@ -52,3 +52,37 @@ consul_ports:
   server: "{{ consul_ports_server | default('8300', true) }}"
 
 service_startup_timeout: 60
+
+# DNSMasq
+dnsmasq_dnsmasq_conf:
+- |
+  port=53
+  bind-interfaces
+  server=8.8.8.8
+  server=8.8.4.4
+
+dnsmasq_dnsmasq_d_files_present:
+  cache:
+  - |
+    domain-needed
+    bogus-priv
+    no-hosts
+    dns-forward-max=150
+    cache-size=1000
+    neg-ttl=3600
+    no-poll
+    no-resolv
+  consul:
+  - |
+    server=/consul/127.0.0.1#{{consul_ports.dns}}
+
+servicename: 'consuldemo'
+
+local_project_path: "{{ role_path }}/../services/{{ servicename }}"
+remote_root_path: "/var/{{ servicename }}"
+remote_revision_path: "{{ remote_root_path }}/{{ rev }}"
+remote_root_log_path: "/var/log/{{ servicename }}"
+app_logging_level: 'INFO'
+spring_logging_level: 'WARN'
+root_logging_level: 'WARN'
+
