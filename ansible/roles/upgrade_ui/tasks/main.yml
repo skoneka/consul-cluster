@@ -1,10 +1,24 @@
 ---
 
-- name: Install nginx
+#- name: 'add certbot apt repo'
+#  apt_repository:
+#    repo: ppa:certbot/certbot
+#
+#- name: 'install nginx and certbot digitalocean plugin'
+#  package:
+#    name: "{{ item }}"
+#    state: present
+#  with_items:
+#  - "nginx"
+#  - "python3-certbot-dns-digitalocean"
+#  - "python3-certbot-nginx"
+
+- name: 'install nginx'
   package:
     name: "{{ item }}"
     state: present
-  with_items: "nginx"
+  with_items:
+  - "nginx"
 
 - name: 'extrapolate nginx config'
   template: src='nginx.conf.j2' dest="/etc/nginx/nginx.conf"
@@ -23,3 +37,10 @@
 
 - name: 'wait for port 80 to come up'
   wait_for: port="80" delay='1' timeout='5'
+
+- name: "register {{ servicename}}.agileinfra.io to {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+  digital_ocean_domain:
+    state: present
+    name: "{{ servicename}}.agileinfra.io"
+    ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    oauth_token: "{{ lookup('env','DO_API_TOKEN') }}"
