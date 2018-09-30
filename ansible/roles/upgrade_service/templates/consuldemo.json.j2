@@ -3,9 +3,13 @@
     "name": "{{ servicename }}",
     "port": {{ serviceport }},
     "tags": ["{{ target_env }}", "{{ servicename }}"],
-    "check": {
-      "script": "curl localhost:{{ serviceport }}/actuator/health > /dev/null 2>&1",
-      "interval": "10s"
-    }
+    "checks": [
+      {
+         "id": "{{ servicename }}",
+         "name": "{{ servicename }}",
+         "http": "http://localhost:8080/actuator/health",
+         "interval": "10s"
+      }
+    ]
   }
 }
