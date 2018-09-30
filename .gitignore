@@ -5,3 +5,4 @@
 *.info
 *.iml
 target
+*.retry
