@@ -74,11 +74,12 @@ dnsmasq_dnsmasq_d_files_present:
     no-resolv
   consul:
   - |
-    server=/consul/127.0.0.1#{{consul_ports.dns}}
+    server=/consul/127.0.0.1#{{ consul_ports.dns }}
 
 servicename: 'consuldemo'
+serviceport: 8080
 
-local_project_path: "{{ role_path }}/../services/{{ servicename }}"
+local_project_path: "{{ role_path }}/../../../services/{{ servicename }}"
 remote_root_path: "/var/{{ servicename }}"
 remote_revision_path: "{{ remote_root_path }}/{{ rev }}"
 remote_root_log_path: "/var/log/{{ servicename }}"
