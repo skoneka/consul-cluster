@@ -23,7 +23,7 @@
         msg: "Failed to download consul to {{ consul_download_dir }}"
 
 # Deploy consul on all hosts (clients and servers)
-- hosts: "{{target_env}}:&consul"
+- hosts: "{{ target_env }}:&consul"
   remote_user: "root"
   become: 'yes'
   tasks:
@@ -34,7 +34,7 @@
         msg: "Failed to deploy consul to all nodes (client + servers)"
 
 # Upgrade consul on all servers
-- hosts: "{{target_env}}:&server"
+- hosts: "{{target_env}}:&consul:&server"
   remote_user: "root"
   become: 'yes'
   tasks:
@@ -45,13 +45,48 @@
     - fail:
         msg: "Failed to upgrade consul cluster nodes"
 
-# Upgrade consuldemo service
-- hosts: "{{target_env}}:&service"
+
+# Upgrade consul on all clients
+- hosts: "{{target_env}}:&consul:&client"
   remote_user: "root"
   become: 'yes'
   tasks:
   - block:
+    - include_role: {name: 'oefenweb.dnsmasq'}
+    - name: "[systemd-resolved vs dnsmasq conflict]: update local name server"
+      lineinfile:
+        path: /etc/resolv.conf
+        regexp: '^nameserver 127.0.0.53'
+        line: 'nameserver 127.0.0.1'
+    - name: "[systemd-resolved vs dnsmasq conflict]: stop systemd-resolved.service"
+      service: name="systemd-resolved" state='stopped'
+    - name: "[systemd-resolved vs dnsmasq conflict]: disable systemd-resolved.service"
+      service: name="systemd-resolved" enabled='false'
+    - name: "[systemd-resolved vs dnsmasq conflict]: restart dnsmasq.service"
+      service: name="dnsmasq" state='restarted'
+    - include_role: {name: 'upgrade_node'}
+      vars: {node_role: 'client'}
+    rescue:
+    - fail:
+        msg: "Failed to upgrade consul client"
+
+# Locally download consul
+- hosts: 'localhost'
+  connection: 'local'
+  gather_facts: no
+  tasks:
+  - block:
     - include_role: {name: 'build_service'}
+    rescue:
+    - fail:
+        msg: "Failed to upgrade consuldemo service"
+
+# Upgrade consuldemo service
+- hosts: "{{target_env}}:&consuldemo"
+  remote_user: "root"
+  become: 'yes'
+  tasks:
+  - block:
     - include_role: {name: 'deploy_service'}
     - include_role: {name: 'upgrade_service'}
       vars: {register_service: true}
@@ -59,17 +94,13 @@
     - fail:
         msg: "Failed to upgrade consuldemo service"
 
-# Upgrade consul on all clients
 # Upgrade consul ui
-- hosts: "{{target_env}}:&client"
+- hosts: "{{target_env}}:&consul:&ui"
   remote_user: "root"
   become: 'yes'
   tasks:
   - block:
-    - include_role: {name: 'upgrade_node'}
-      vars: {node_role: 'client'}
-    - include_role: {name: 'oefenweb.dnsmasq'}
     - include_role: {name: 'upgrade_ui'}
     rescue:
     - fail:
-        msg: "Failed to upgrade consul client + ui"
+        msg: "Failed to upgrade consul ui"
